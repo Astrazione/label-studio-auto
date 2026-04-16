@@ -1,0 +1,20 @@
+services:
+  label-studio:
+    image: heartexlabs/label-studio:latest
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./label-studio-data:/label-studio/data
+    environment:
+      - LABEL_STUDIO_LOCAL_FILES_SERVING_ENABLED=true
+      - LABEL_STUDIO_LOCAL_FILES_DOCUMENT_ROOT=/label-studio/data
+
+  ml-backend:
+    build: ./ml-backend
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./ml-backend/weights:/app/weights
+    environment:
+      - CONFIG_PATH=/app/config.yaml
+      - LABEL_STUDIO_API_KEY=your-api-key # legacy api key для аутентификации в Label Studio (можно найти в настройках профиля после включения в организации)

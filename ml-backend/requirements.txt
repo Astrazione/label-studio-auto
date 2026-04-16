@@ -1,0 +1,8 @@
+label-studio-ml
+ultralytics
+pillow
+requests
+redis
+rq
+gunicorn
+pyyaml

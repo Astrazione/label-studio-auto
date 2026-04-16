@@ -1,0 +1,17 @@
+model:
+  path: /app/weights/best.pt
+  confidence_threshold: 0.3
+  version: yolo-v0.1
+
+label_studio:
+  url: http://label-studio:8080
+
+prediction:
+  from_name: label
+  to_name: image
+  type: rectanglelabels
+
+labels:
+  0: chip
+  1: gap
+  2: protrusion
