@@ -1,3 +1,0 @@
-labelstudio.your-subdomain.example {
-    reverse_proxy label-studio:8080
-}

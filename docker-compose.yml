@@ -1,15 +1,42 @@
 services:
+  db:
+    image: pgautoupgrade/pgautoupgrade:17-alpine
+    container_name: label-studio-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: labelstudio
+      POSTGRES_USER: labelstudio
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - ./postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U labelstudio -d labelstudio"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+  
   label-studio:
     image: heartexlabs/label-studio:latest
     container_name: label-studio
     restart: unless-stopped
-    expose:
-      - "8080"
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
     volumes:
       - ./label-studio-data:/label-studio/data
     environment:
-      LABEL_STUDIO_HOST: https://label-studio-auto.twilightparadox.com
-      CSRF_TRUSTED_ORIGINS: https://label-studio-auto.twilightparadox.com
+      LABEL_STUDIO_HOST: ${LABEL_STUDIO_HOST}
+      CSRF_TRUSTED_ORIGINS: ${LABEL_STUDIO_HOST}
+
+      DJANGO_DB: default
+      POSTGRE_NAME: labelstudio
+      POSTGRE_USER: labelstudio
+      POSTGRE_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRE_PORT: 5432
+      POSTGRE_HOST: db
+
       LABEL_STUDIO_LOCAL_FILES_SERVING_ENABLED: "true"
       LABEL_STUDIO_LOCAL_FILES_DOCUMENT_ROOT: /label-studio/data
 
@@ -18,6 +45,14 @@ services:
       LABEL_STUDIO_USER_TOKEN: ${LABEL_STUDIO_USER_TOKEN}
       LABEL_STUDIO_ENABLE_LEGACY_API_TOKEN: "true"
 
+      LABEL_STUDIO_DISABLE_SIGNUP_WITHOUT_LINK: "true"
+
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/').read()"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+  
   ml-backend:
     build: ./ml-backend
     container_name: ml-backend
@@ -32,21 +67,3 @@ services:
       LABEL_STUDIO_API_KEY: ${LABEL_STUDIO_USER_TOKEN}
     depends_on:
       - label-studio
-
-  caddy:
-    image: caddy:2
-    container_name: caddy
-    restart: unless-stopped
-    depends_on:
-      - label-studio
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy_data:/data
-      - caddy_config:/config
-
-volumes:
-  caddy_data:
-  caddy_config:
